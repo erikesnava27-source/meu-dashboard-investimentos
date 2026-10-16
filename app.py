@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
+```[cite: 14]
 import requests
 import json
 import os
@@ -59,6 +60,8 @@ def obter_cotacao(ticker):
         print(f"Erro ao buscar {ticker}: {e}")
 
     return jsonify({"ticker": ticker, "preco": None}), 404
-
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('.', 'manifest.json')
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
