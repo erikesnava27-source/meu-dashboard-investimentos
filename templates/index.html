@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Investimentos Online</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0e14;
+        }
+        .card-dark {
+            background-color: #121721;
+            border: 1px solid #1e2638;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0b0e14;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e2638;
+            border-radius: 4px;
+        }
+        .market-card {
+            transition: all 0.2s ease;
+        }
+        .market-card:hover {
+            transform: translateY(-2px);
+            border-color: #10b981;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen p-4 md:p-8 custom-scrollbar">
+
+    <!-- MENU DE NAVEGAÇÃO SUPERIOR -->
+    <header class="max-w-[1600px] mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center gap-8 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <div class="flex items-center gap-2.5 font-bold text-white text-lg tracking-tight">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-chart-pie text-sm"></i>
+                </div>
+                <span>INVEST<span class="text-emerald-400">ONLINE</span></span>
+            </div>
+            
+            <nav class="flex items-center gap-6 text-sm font-medium text-slate-400">
+                <button onclick="voltarParaMercados()" class="hover:text-white transition flex items-center gap-2 text-white font-semibold">
+                    <i class="fa-solid fa-wallet text-slate-400"></i> Patrimônio
+                </button>
+            </nav>
+        </div>
+
+        <!-- AÇÕES HEADER -->
+        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button onclick="voltarParaMercados()" id="btn-voltar" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-2 shadow-lg">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+                <span>Voltar aos Mercados</span>
+            </button>
+            <button onclick="atualizarCotacoesOnline()" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 transition flex items-center gap-2 shadow-lg">
+                <i id="icon-refresh" class="fa-solid fa-rotate text-xs"></i>
+                <span>Sincronizar B3 & Servidor</span>
+            </button>
+            <button onclick="abrirModalAtivo()" class="bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Adicionar Lançamento
+            </button>
+        </div>
+    </header>
+
+    <!-- CARDS DE RESUMO SUPERIORES -->
+    <section class="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="card-dark rounded-2xl p-6 relative overflow-hidden shadow-xl">
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Patrimônio Real</span>
+                <div class="p-2 rounded-lg bg-slate-800/50 text-slate-400"><i class="fa-solid fa-vault"></i></div>
+            </div>
+            <h2 id="kpi-patrimonio-brl" class="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">R$ 0,00</h2>
+            <p id="kpi-patrimonio-usd" class="text-xs font-medium text-slate-400 mt-2">$ 0,00 USD</p>
+        </div>
+
+        <div class="card-dark rounded-2xl p-6 relative overflow-hidden shadow-xl">
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lucro Total</span>
+                <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-circle-dollar-to-slot"></i></div>
+            </div>
+            <h2 id="kpi-lucro-brl" class="text-2xl lg:text-3xl font-extrabold text-emerald-400 tracking-tight">R$ 0,00</h2>
+            <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-800/80 text-xs">
+                <span class="text-slate-400">Rentabilidade Total:</span>
+                <span id="kpi-lucro-pct" class="font-bold text-emerald-400">+0,00%</span>
+            </div>
+        </div>
+
+        <div class="card-dark rounded-2xl p-6 relative overflow-hidden shadow-xl">
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Aportado</span>
+                <div class="p-2 rounded-lg bg-slate-800/50 text-slate-400"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            </div>
+            <h2 id="kpi-investido-brl" class="text-2xl lg:text-3xl font-extrabold text-slate-200 tracking-tight">R$ 0,00</h2>
+            <p class="text-xs font-medium text-slate-500 mt-2">Soma do valor de compra</p>
+        </div>
+
+        <div class="card-dark rounded-2xl p-6 relative overflow-hidden shadow-xl">
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dólar Comercial</span>
+                <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400"><i class="fa-solid fa-dollar-sign"></i></div>
+            </div>
+            <h2 id="kpi-dolar-taxa" class="text-2xl lg:text-3xl font-extrabold text-amber-400 tracking-tight">R$ 5,25</h2>
+            <p class="text-xs font-medium text-slate-400 mt-2">Câmbio Automático</p>
+        </div>
+    </section>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- LADO ESQUERDO: MERCADOS -->
+        <section id="view-mercados" class="lg:col-span-7 space-y-6">
+            <div class="card-dark rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-emerald-400"></i> Mercados de Investimento
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Selecione uma categoria para gerenciar os seus ativos</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="mercados-grid-container">
+                    <!-- Injetado por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TABELA DE ATIVOS DO MERCADO -->
+        <section id="view-ativos-mercado" class="lg:col-span-7 card-dark rounded-2xl p-6 shadow-xl flex flex-col justify-between hidden">
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 id="titulo-mercado-ativo" class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-list text-emerald-400"></i> Ativos do Mercado
+                        </h2>
+                        <p id="subtitulo-mercado-ativo" class="text-xs text-slate-400 mt-1">Lista completa do mercado selecionado</p>
+                    </div>
+                    <button onclick="abrirModalAtivoComMercado()" class="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 font-semibold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Add Ativo
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5 rounded-l-lg">Ativo</th>
+                                <th class="p-3.5 text-right">Qtd</th>
+                                <th class="p-3.5 text-right">P. Médio</th>
+                                <th class="p-3.5 text-right">Preço Atual</th>
+                                <th class="p-3.5 text-right">Total Atual</th>
+                                <th class="p-3.5 text-right">Lucro / Prej.</th>
+                                <th class="p-3.5 text-center rounded-r-lg">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-ativos-mercado-body" class="divide-y divide-slate-800/60">
+                            <!-- Injetado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400">
+                <span id="mercado-ativos-count">0 Ativos Cadastrados</span>
+                <span class="text-[11px] text-slate-500">Atualizado automaticamente via API</span>
+            </div>
+        </section>
+
+        <!-- LADO DIREITO: GRÁFICO ROSCA + BARRAS -->
+        <section class="lg:col-span-5 space-y-6">
+            <div class="card-dark rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-base font-bold text-white tracking-tight">Ativos na Carteira</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    <div class="md:col-span-7 relative h-56 flex justify-center items-center">
+                        <canvas id="chartAtivosRosca"></canvas>
+                    </div>
+                    <div class="md:col-span-5 space-y-3 text-xs font-medium" id="legenda-customizada-rosca">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-dark rounded-2xl p-6 shadow-xl">
+                <h3 class="text-base font-bold text-white tracking-tight mb-4">Maiores Posições da Carteira</h3>
+                <div class="relative h-48 w-full">
+                    <canvas id="chartTopBarras"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE LANÇAMENTO E EDIÇÃO -->
+    <div id="modal-ativo" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex justify-center items-center hidden z-50 p-4">
+        <div class="card-dark rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
+            <h3 id="modal-titulo" class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle text-emerald-400"></i> Novo Lançamento
+            </h3>
+            <input type="hidden" id="ativo-edit-id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Mercado / Categoria</label>
+                    <select id="ativo-mercado" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        <!-- Injetado por JS -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Ticker / Código (ex: XPML11, MXRF11, PETR4, BTC)</label>
+                    <input type="text" id="ativo-ticker" placeholder="DIGITE O TICKER" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 uppercase font-bold tracking-wider">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Moeda</label>
+                        <select id="ativo-moeda" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <option value="BRL">BRL (R$)</option>
+                            <option value="USD">USD ($)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Quantidade</label>
+                        <input type="number" step="any" id="ativo-qtd" placeholder="0.00" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Preço Médio (Compra)</label>
+                    <input type="number" step="any" id="ativo-preco-medio" placeholder="0.00" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="fecharModalAtivo()" class="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white">Cancelar</button>
+                <button onclick="salvarAtivo()" class="px-5 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl shadow-lg transition">Salvar Posição</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA DE COMUNICAÇÃO COM O SERVIDOR E API ONLINE -->
+    <script>
+        let cotacaoDolar = 5.25;
+
+        const mercados = [
+            { id: 'fii', nome: 'FIIs', icon: 'fa-building', color: '#3b82f6', desc: 'Fundos Imobiliários (XPML11, MXRF11...)' },
+            { id: 'etf_internacional', nome: 'ETFs Internac.', icon: 'fa-globe', color: '#facc15', desc: 'ETFs e Ativos no Exterior' },
+            { id: 'acao', nome: 'Ações', icon: 'fa-chart-line', color: '#10b981', desc: 'Ações da B3 e EUA (PETR4...)' },
+            { id: 'cripto', nome: 'Criptos', icon: 'fa-coins', color: '#c084fc', desc: 'Bitcoin, Ethereum, Altcoins' },
+            { id: 'renda_fixa', nome: 'Renda Fixa', icon: 'fa-vault', color: '#f87171', desc: 'Tesouro, CDBs, LCI/LCA' }
+        ];
+
+        let mercadoAtivoId = null;
+        let carteira = [];
+
+        let chartRosca = null;
+        let chartBarras = null;
+
+        const fmtBRL = (v) => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtUSD = (v) => '$ ' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        function initSelectMercados() {
+            const sel = document.getElementById('ativo-mercado');
+            sel.innerHTML = '';
+            mercados.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.nome}</option>`);
+        }
+
+        function initCharts() {
+            const ctxRosca = document.getElementById('chartAtivosRosca').getContext('2d');
+            chartRosca = new Chart(ctxRosca, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#3b82f6', '#facc15', '#10b981', '#c084fc', '#f87171'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const ctxBarras = document.getElementById('chartTopBarras').getContext('2d');
+            chartBarras = new Chart(ctxBarras, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Valor Total (R$)',
+                        data: [],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                        y: { grid: { color: '#1e2638' }, ticks: { color: '#64748b' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // CARREGAR DADOS DO SERVIDOR E BUSCAR COTAÇÕES ONLINE
+        async function carregarDadosServidor() {
+            try {
+                const res = await fetch('/api/carteira');
+                carteira = await res.json();
+            } catch (e) {
+                console.error("Erro ao carregar do servidor:", e);
+            }
+            await atualizarCotacoesOnline();
+        }
+
+        async function sincronizarServidor() {
+            try {
+                await fetch('/api/carteira', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(carteira)
+                });
+            } catch (e) {
+                console.error("Erro ao salvar no servidor:", e);
+            }
+        }
+
+        async function atualizarCotacoesOnline() {
+            const btnIcon = document.getElementById('icon-refresh');
+            btnIcon.classList.add('fa-spin');
+
+            try {
+                // Obter câmbio Dólar
+                const resUsd = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const dataUsd = await resUsd.json();
+                if (dataUsd && dataUsd.rates && dataUsd.rates.BRL) {
+                    cotacaoDolar = dataUsd.rates.BRL;
+                    document.getElementById('kpi-dolar-taxa').innerText = fmtBRL(cotacaoDolar);
+                }
+
+                // Buscar cotações reais para cada ativo via nosso backend
+                for (let item of carteira) {
+                    try {
+                        const res = await fetch(`/api/cotacao/${item.ticker}`);
+                        const data = await res.json();
+                        if (data && data.preco && data.preco > 0) {
+                            item.precoAtual = data.preco;
+                        }
+                    } catch (err) {
+                        console.log(`Falha ao buscar cotação de ${item.ticker}`);
+                    }
+                    if (!item.precoAtual || item.precoAtual <= 0) {
+                        item.precoAtual = item.precoMedio;
+                    }
+                }
+            } catch (err) {
+                console.error('Erro na sincronização:', err);
+            } finally {
+                btnIcon.classList.remove('fa-spin');
+                renderUI();
+                sincronizarServidor();
+            }
+        }
+
+        function renderUI() {
+            renderKPIs();
+            if (mercadoAtivoId === null) {
+                renderGridMercados();
+                document.getElementById('view-mercados').classList.remove('hidden');
+                document.getElementById('view-ativos-mercado').classList.add('hidden');
+                document.getElementById('btn-voltar').classList.add('hidden');
+            } else {
+                renderTabelaAtivosMercado();
+                document.getElementById('view-mercados').classList.add('hidden');
+                document.getElementById('view-ativos-mercado').classList.remove('hidden');
+                document.getElementById('btn-voltar').classList.remove('hidden');
+            }
+            renderCharts();
+        }
+
+        function renderKPIs() {
+            let totalPatrimonioBRL = 0;
+            let totalInvestidoBRL = 0;
+
+            carteira.forEach(item => {
+                const mult = item.moeda === 'USD' ? cotacaoDolar : 1;
+                totalPatrimonioBRL += (item.qtd * item.precoAtual) * mult;
+                totalInvestidoBRL += (item.qtd * item.precoMedio) * mult;
+            });
+
+            const lucroBRL = totalPatrimonioBRL - totalInvestidoBRL;
+            const lucroPct = totalInvestidoBRL > 0 ? (lucroBRL / totalInvestidoBRL) * 100 : 0;
+
+            document.getElementById('kpi-patrimonio-brl').innerText = fmtBRL(totalPatrimonioBRL);
+            document.getElementById('kpi-patrimonio-usd').innerText = fmtUSD(totalPatrimonioBRL / cotacaoDolar);
+            document.getElementById('kpi-investido-brl').innerText = fmtBRL(totalInvestidoBRL);
+
+            const elLucro = document.getElementById('kpi-lucro-brl');
+            const elLucroPct = document.getElementById('kpi-lucro-pct');
+
+            elLucro.innerText = fmtBRL(lucroBRL);
+            elLucroPct.innerText = `${lucroBRL >= 0 ? '+' : ''}${lucroPct.toFixed(2)}%`;
+            elLucro.className = `text-2xl lg:text-3xl font-extrabold tracking-tight ${lucroBRL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            elLucroPct.className = `font-bold ${lucroBRL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        function renderGridMercados() {
+            const grid = document.getElementById('mercados-grid-container');
+            grid.innerHTML = '';
+
+            mercados.forEach(m => {
+                const ativosDoMercado = carteira.filter(i => i.mercado === m.id);
+                let patMercadoBRL = 0;
+                ativosDoMercado.forEach(i => {
+                    patMercadoBRL += (i.qtd * i.precoAtual) * (i.moeda === 'USD' ? cotacaoDolar : 1);
+                });
+
+                grid.innerHTML += `
+                    <div onclick="entrarMercado('${m.id}')" class="market-card card-dark rounded-xl p-5 cursor-pointer flex flex-col justify-between border border-slate-800">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style="background-color: ${m.color}15; color: ${m.color}">
+                                    <i class="fa-solid ${m.icon}"></i>
+                                </div>
+                                <span class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 px-2.5 py-1 rounded-full font-bold">
+                                    ${ativosDoMercado.length} ativos
+                                </span>
+                            </div>
+                            <h3 class="font-bold text-white text-sm tracking-tight">${m.nome}</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">${m.desc}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs">
+                            <span class="text-slate-500 font-medium">Patrimônio:</span>
+                            <span class="font-bold text-white">${fmtBRL(patMercadoBRL)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function entrarMercado(mercadoId) {
+            mercadoAtivoId = mercadoId;
+            renderUI();
+        }
+
+        function voltarParaMercados() {
+            mercadoAtivoId = null;
+            renderUI();
+        }
+
+        function renderTabelaAtivosMercado() {
+            const mInfo = mercados.find(m => m.id === mercadoAtivoId);
+            document.getElementById('titulo-mercado-ativo').innerHTML = `<i class="fa-solid ${mInfo.icon}" style="color: ${mInfo.color}"></i> Ativos de ${mInfo.nome}`;
+            document.getElementById('subtitulo-mercado-ativo').innerText = mInfo.desc;
+
+            const tbody = document.getElementById('table-ativos-mercado-body');
+            tbody.innerHTML = '';
+
+            const itens = carteira.filter(i => i.mercado === mercadoAtivoId);
+
+            itens.forEach(item => {
+                const mult = item.moeda === 'USD' ? cotacaoDolar : 1;
+                const totalAtual = (item.qtd * item.precoAtual) * mult;
+                const custoTotal = (item.qtd * item.precoMedio) * mult;
+                const lucro = totalAtual - custoTotal;
+                const lucroPct = custoTotal > 0 ? (lucro / custoTotal) * 100 : 0;
+                const fmtCurr = item.moeda === 'USD' ? fmtUSD : fmtBRL;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3.5">
+                            <p class="font-bold text-white text-xs">${item.ticker}</p>
+                            <span class="text-[10px] text-slate-400">${item.moeda}</span>
+                        </td>
+                        <td class="p-3.5 text-right font-semibold text-slate-200">${item.qtd}</td>
+                        <td class="p-3.5 text-right text-slate-400">${fmtCurr(item.precoMedio)}</td>
+                        <td class="p-3.5 text-right font-bold text-white">${fmtCurr(item.precoAtual)}</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400">${fmtBRL(totalAtual)}</td>
+                        <td class="p-3.5 text-right font-bold ${lucro >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${fmtBRL(lucro)}
+                            <span class="text-[10px] block font-normal">${lucro >= 0 ? '+' : ''}${lucroPct.toFixed(2)}%</span>
+                        </td>
+                        <td class="p-3.5 text-center flex justify-center gap-2 mt-1">
+                            <button onclick="editarAtivo(${item.id})" class="text-slate-400 hover:text-white" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deletarAtivo(${item.id})" class="text-slate-500 hover:text-rose-400" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('mercado-ativos-count').innerText = `${itens.length} ativos nesta categoria`;
+        }
+
+        function renderCharts() {
+            let totalGeralBRL = 0;
+            const mercadoValores = {};
+
+            mercados.forEach(m => mercadoValores[m.id] = 0);
+
+            carteira.forEach(item => {
+                const mult = item.moeda === 'USD' ? cotacaoDolar : 1;
+                const val = (item.qtd * item.precoAtual) * mult;
+                totalGeralBRL += val;
+                if (mercadoValores[item.mercado] !== undefined) {
+                    mercadoValores[item.mercado] += val;
+                }
+            });
+
+            const legendaContainer = document.getElementById('legenda-customizada-rosca');
+            legendaContainer.innerHTML = '';
+
+            const labels = [];
+            const dataValores = [];
+            const cores = [];
+
+            mercados.forEach(m => {
+                const val = mercadoValores[m.id];
+                const pct = totalGeralBRL > 0 ? ((val / totalGeralBRL) * 100).toFixed(2) : 0;
+
+                labels.push(m.nome);
+                dataValores.push(val);
+                cores.push(m.color);
+
+                legendaContainer.innerHTML += `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-sm" style="background-color: ${m.color}"></span>
+                            <span class="text-slate-300 font-medium">${m.nome}</span>
+                        </div>
+                        <span class="font-bold text-white">${pct.replace('.', ',')}%</span>
+                    </div>
+                `;
+            });
+
+            if (chartRosca) {
+                chartRosca.data.labels = labels;
+                chartRosca.data.datasets[0].data = dataValores;
+                chartRosca.data.datasets[0].backgroundColor = cores;
+                chartRosca.update();
+            }
+
+            if (chartBarras) {
+                const sorted = [...carteira].sort((a, b) => {
+                    const mA = a.moeda === 'USD' ? cotacaoDolar : 1;
+                    const mB = b.moeda === 'USD' ? cotacaoDolar : 1;
+                    return (b.qtd * b.precoAtual * mB) - (a.qtd * a.precoAtual * mA);
+                }).slice(0, 5);
+
+                chartBarras.data.labels = sorted.map(i => i.ticker);
+                chartBarras.data.datasets[0].data = sorted.map(i => i.qtd * i.precoAtual * (i.moeda === 'USD' ? cotacaoDolar : 1));
+                chartBarras.update();
+            }
+        }
+
+        function abrirModalAtivo() {
+            document.getElementById('ativo-edit-id').value = '';
+            document.getElementById('modal-titulo').innerHTML = '<i class="fa-solid fa-plus-circle text-emerald-400"></i> Novo Lançamento';
+            document.getElementById('ativo-ticker').value = '';
+            document.getElementById('ativo-qtd').value = '';
+            document.getElementById('ativo-preco-medio').value = '';
+            if (mercadoAtivoId) document.getElementById('ativo-mercado').value = mercadoAtivoId;
+            document.getElementById('modal-ativo').classList.remove('hidden');
+        }
+
+        function abrirModalAtivoComMercado() { abrirModalAtivo(); }
+        function fecharModalAtivo() { document.getElementById('modal-ativo').classList.add('hidden'); }
+
+        async function salvarAtivo() {
+            const editId = document.getElementById('ativo-edit-id').value;
+            const mercado = document.getElementById('ativo-mercado').value;
+            const ticker = document.getElementById('ativo-ticker').value.trim().toUpperCase();
+            const moeda = document.getElementById('ativo-moeda').value;
+            const qtd = parseFloat(document.getElementById('ativo-qtd').value);
+            const precoMedio = parseFloat(document.getElementById('ativo-preco-medio').value);
+
+            if (!ticker || isNaN(qtd) || isNaN(precoMedio) || qtd <= 0) {
+                return alert('Por favor preencha os campos obrigatórios corretamente.');
+            }
+
+            if (editId) {
+                const idx = carteira.findIndex(i => i.id == editId);
+                if (idx !== -1) {
+                    carteira[idx] = { ...carteira[idx], mercado, ticker, moeda, qtd, precoMedio };
+                }
+            } else {
+                carteira.push({ 
+                    id: Date.now(), 
+                    mercado, 
+                    ticker, 
+                    moeda, 
+                    qtd, 
+                    precoMedio, 
+                    precoAtual: precoMedio 
+                });
+            }
+
+            fecharModalAtivo();
+            await sincronizarServidor();
+            await atualizarCotacoesOnline();
+        }
+
+        function editarAtivo(id) {
+            const item = carteira.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('ativo-edit-id').value = item.id;
+            document.getElementById('modal-titulo').innerHTML = '<i class="fa-solid fa-pen text-blue-400"></i> Editar Posição';
+            document.getElementById('ativo-mercado').value = item.mercado;
+            document.getElementById('ativo-ticker').value = item.ticker;
+            document.getElementById('ativo-moeda').value = item.moeda;
+            document.getElementById('ativo-qtd').value = item.qtd;
+            document.getElementById('ativo-preco-medio').value = item.precoMedio;
+
+            document.getElementById('modal-ativo').classList.remove('hidden');
+        }
+
+        async function deletarAtivo(id) {
+            if (confirm('Deseja remover este ativo da carteira?')) {
+                carteira = carteira.filter(i => i.id !== id);
+                await sincronizarServidor();
+                renderUI();
+            }
+        }
+
+        // Inicialização
+        initSelectMercados();
+        initCharts();
+        carregarDadosServidor();
+    </script>
+</body>
+</html>
